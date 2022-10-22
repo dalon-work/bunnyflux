@@ -1,22 +1,12 @@
-name = "bunnyflux"
+name = "bunny-flux"
 version = "0.1.0"
-license = "mit"
-author = "Dalon Work"
-maintainer = "dwwork@gmail.com"
+license = "license"
+author = "Jane Doe"
+maintainer = "jane.doe@example.com"
 copyright = "Copyright 2022, Jane Doe"
 [build]
 auto-executables = true
 auto-tests = true
 auto-examples = true
-
 [install]
-
 library = false
-
-[dependencies]
-stdlib.git = "https://github.com/fortran-lang/stdlib"
-stdlib.branch = "stdlib-fpm"
-
-[dev-dependencies]
-test-drive.git = "https://github.com/fortran-lang/test-drive"
-test-drive.tag = "v0.4.0"
