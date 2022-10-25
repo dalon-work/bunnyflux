@@ -1,5 +1,4 @@
 program main
-  use bunny_flux
   implicit none
 
   type :: HexIndex
@@ -114,11 +113,13 @@ program main
 
   block 
     integer :: i, ii, jj, kk
+    real :: r
     do i = 1,N_STARTING_FOXES
       ii = uniform_random_int(1, NI)
       jj = uniform_random_int(1, NJ)
       kk = uniform_random_int(1, N_BUNNY_VECS)
-      foxes(kk,ii,jj,cur_timestep) = FOX_START_ENERGY
+      call random_number(r)
+      foxes(kk,ii,jj,cur_timestep) = r*FOX_START_ENERGY
     end do
   end block
 
@@ -136,10 +137,97 @@ program main
 
 contains
 
-  subroutine update_foxes_in_cell(foxes_cur, foxes_next, bunnies_cur)
+  subroutine swap(foxes_cur, foxes_sort, a, b)
     real, intent(in) :: foxes_cur(N_FOX_VECS)
+    integer, intent(inout) :: foxes_sort(N_FOX_VECS)
+    integer, intent(in) :: a,b
+    integer :: ai, bi, tmp
+    ai = foxes_sort(a)
+    bi = foxes_sort(b)
+
+    if (foxes_cur(ai) < foxes_cur(bi)) then
+      tmp = foxes_sort(a)
+      foxes_sort(a) = foxes_sort(b)
+      foxes_sort(b) = tmp
+    end if
+  end subroutine
+
+  subroutine sort_foxes(foxes_cur, foxes_sort) 
+    real, intent(in) :: foxes_cur(N_FOX_VECS)
+    integer, intent(out) :: foxes_sort(N_FOX_VECS)
+    integer :: j
+
+    foxes_sort = [ 1,2,3,4,5,6,7 ]
+
+    call swap(foxes_cur, foxes_sort, 2, 3)
+    call swap(foxes_cur, foxes_sort, 4, 5)
+    call swap(foxes_cur, foxes_sort, 6, 7)
+    call swap(foxes_cur, foxes_sort, 1, 3)
+    call swap(foxes_cur, foxes_sort, 4, 6)
+    call swap(foxes_cur, foxes_sort, 5, 7)
+    call swap(foxes_cur, foxes_sort, 1, 2)
+    call swap(foxes_cur, foxes_sort, 5, 6)
+    call swap(foxes_cur, foxes_sort, 3, 7)
+    call swap(foxes_cur, foxes_sort, 1, 5)
+    call swap(foxes_cur, foxes_sort, 2, 6)
+    call swap(foxes_cur, foxes_sort, 1, 4)
+    call swap(foxes_cur, foxes_sort, 3, 6)
+    call swap(foxes_cur, foxes_sort, 2, 4)
+    call swap(foxes_cur, foxes_sort, 3, 5)
+    call swap(foxes_cur, foxes_sort, 3, 4)
+  end subroutine
+
+  subroutine update_foxes_in_cell(foxes_cur, foxes_next, bunnies_cur)
+    real, intent(inout) :: foxes_cur(N_FOX_VECS)
     real, intent(inout) :: foxes_next(N_FOX_VECS)
     real, intent(inout) :: bunnies_cur(N_BUNNY_VECS)
+
+    integer :: fox_vecs_left
+    integer :: fox_vecs(N_FOX_VECS)
+    integer :: foxes_sort(N_FOX_VECS)
+    integer :: i,j,ii,bunnies_eaten,ri,tmp
+    real :: r
+
+    fox_vecs_left = N_FOX_VECS
+    fox_vecs = [ 1, 2, 3, 4, 5, 6, 7 ]
+    bunnies_eaten = 0
+
+    call sort_foxes(foxes_cur, foxes_sort)
+
+    i = 1
+    do while (foxes_cur( foxes_sort(i) ) > 0) 
+      ii = foxes_sort(i)
+
+      do j=1,N_BUNNY_VECS
+        if (bunnies_cur(j) > 0) then
+          call random_number(r)
+          if ( r >= BUNNY_ESCAPE ) then
+            foxes_cur( ii ) = foxes_cur( ii ) + FOX_EAT_CONVERSION*bunnies_cur(j)
+            bunnies_cur(j) = 0
+            bunnies_eaten = bunnies_eaten + 1
+          end if
+        end if
+      enddo
+
+      call random_number(r)
+      ri = int(r * fox_vecs_left)+1
+
+      foxes_next(ri) = foxes_cur(ii)
+
+      fox_vecs_left = fox_vecs_left - 1
+
+      tmp = fox_vecs(ri)
+      fox_vecs(ri) = fox_vecs(fox_vecs_left)
+      fox_vecs(fox_vecs_left) = tmp
+
+      i = i + 1
+
+    end do
+
+    write(*,*) "next",foxes_next
+    write(*,*) "bunny cur", bunnies_cur
+    write(*,*) "bunnies eaten",bunnies_eaten
+
   end subroutine
 
   function uniform_random_int(ibegin, iend) result(o)
